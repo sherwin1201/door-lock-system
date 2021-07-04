@@ -1,0 +1,283 @@
+C51 COMPILER V9.60.0.0   DOORLOCK                                                          07/04/2021 23:34:32 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE DOORLOCK
+OBJECT MODULE PLACED IN .\Objects\doorlock.obj
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.EXE D:\8051 codes\doorlock.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRI
+                    -NT(.\Listings\doorlock.lst) TABS(2) OBJECT(.\Objects\doorlock.obj)
+
+line level    source
+
+   1          #include<reg51.h>
+   2          
+   3          // Port P1 for lcd commands (datalines)
+   4          
+   5          // Port P2.0 to P2.3 for 4 rows of lcd
+   6          // Keypad pins
+   7          // Row pins
+   8          sbit r1=P2^0;   // Initializing rows    
+   9          sbit r2=P2^1;   // and setting them 
+  10          sbit r3=P2^2;   // with port p2.0,
+  11          sbit r4=P2^3;   // p2.1, p2.2, p2.3
+  12          
+  13          // Port P3.0 to P3.2 for 3 columns if lcd
+  14          // Column pins
+  15          sbit c1=P3^0;   // Initializing columns
+  16          sbit c2=P3^1;   // and setting them with
+  17          sbit c3=P3^2;   // port p3.0 p3.1, p2.2
+  18          
+  19          // Port P3.3 and P3.4 for motor
+  20          // Motor pins
+  21          sbit motp1=P3^3;
+  22          sbit motp2=P3^4;
+  23          
+  24          // Port P3.5 to P3.7 for lcd
+  25          // LCD pins
+  26          sbit rs=P3^5;   // For lcd command(0)/data(1)
+  27          sbit rw=P3^6;   // For read(1)/write(0)
+  28          sbit en=P3^7;   // Enable
+  29          
+  30          void lcdcmd(unsigned char);
+  31          void lcddat(unsigned char);
+  32          void lcddisplay(unsigned char *q);
+  33          char keypad();
+  34          void check();
+  35          void delay(unsigned int);
+  36          void reset();
+  37          
+  38          unsigned char pin[] = "12345";  //password
+  39          unsigned char epin[5];  //password to be entered
+  40          int unlocked = 0;
+  41          
+  42          
+  43          
+  44          void main(){
+  45   1        lcdcmd(0x0F);   // Command for blinking cursor
+  46   1        lcdcmd(0x38);   // Command to recieve input
+  47   1        lcdcmd(0x01);   // Clear screen
+  48   1        
+  49   1        while(1){
+  50   2            unsigned int i=0;
+  51   2          
+  52   2              lcdcmd(0x80);   // First row first column of lcd
+  53   2              lcddisplay("Password: ");
+  54   2              delay(1000);    
+C51 COMPILER V9.60.0.0   DOORLOCK                                                          07/04/2021 23:34:32 PAGE 2   
+
+  55   2              lcdcmd(0xc0);   // Take cursor after "Password"
+  56   2              while(pin[i] != '\0'){
+  57   3                epin[i] = keypad();
+  58   3                lcdcmd(0xc0+i);
+  59   3                delay(1000);
+  60   3                lcddat('*');
+  61   3                delay(1000);
+  62   3                i++;
+  63   3              }
+  64   2              check();
+  65   2        }
+  66   1      }
+  67          
+  68          void reset(){
+  69   1        c1=c2=c3=1;
+  70   1      }
+  71          
+  72          void delay(unsigned int i){   // Delay function
+  73   1        int a, b;
+  74   1        for(a=0;a<i;a++){
+  75   2          for(b=0; b<10;b++);
+  76   2        }
+  77   1      }
+  78          
+  79          void lcdcmd(unsigned char a){   // LCD command function
+  80   1        P1=a;                         // Sends command from port to display
+  81   1        rs=0;                         // Input is a command
+  82   1        rw=0;                         // Input written to LCD   
+  83   1        en=1;                         // Enable off
+  84   1        
+  85   1        delay(1000);
+  86   1        en=0;                         // Enable on
+  87   1      }
+  88          
+  89          void lcddat(unsigned char i){   // LCD data function
+  90   1        P1=i;                         // Send data from port to display
+  91   1        rs=1;                         // Input is data    
+  92   1        rw=0;                         // Input is to be written to LCD
+  93   1        en=1;                         // Enable off
+  94   1        
+  95   1        delay(1000);
+  96   1        en=0;                         // Enable on
+  97   1      }
+  98          
+  99          void lcddisplay(unsigned char *q){    //LCD display fucnction
+ 100   1        int k;
+ 101   1        for(k=0; q[k] != '\0'; k++){
+ 102   2            lcddat(q[k]);
+ 103   2        }
+ 104   1        delay(10000);
+ 105   1      }
+ 106          
+ 107          char keypad(){
+ 108   1        int x=0;
+ 109   1        
+ 110   1        while(x==0){
+ 111   2          //if(r1==0){
+ 112   2            r1=0; r2=1; r3=1; r4=1;   // For row 1
+ 113   2            if(c1==0){
+ 114   3            lcddat('1');
+ 115   3            delay(100);
+ 116   3            x=1;
+C51 COMPILER V9.60.0.0   DOORLOCK                                                          07/04/2021 23:34:32 PAGE 3   
+
+ 117   3            return '1';
+ 118   3          }
+ 119   2          if(c2==0){
+ 120   3            lcddat('2');
+ 121   3            delay(100);
+ 122   3            x=1;
+ 123   3            return '2';
+ 124   3          }
+ 125   2          if(c3==0){
+ 126   3            lcddat('3');
+ 127   3            delay(100);
+ 128   3            x=1;
+ 129   3            return '3';
+ 130   3          }
+ 131   2          //}
+ 132   2          
+ 133   2          r1=1; r2=0; r3=1; r4=1;   // For row 2
+ 134   2          //if(r2==0){
+ 135   2            if(c1==0){
+ 136   3            lcddat('4');
+ 137   3            delay(100);
+ 138   3            x=1;
+ 139   3            return '4';
+ 140   3          }
+ 141   2          
+ 142   2          if(c2==0){
+ 143   3            lcddat('5');
+ 144   3            delay(100);
+ 145   3            x=1;
+ 146   3            return '5';
+ 147   3          }
+ 148   2          if(c3==0){
+ 149   3            lcddat('6');
+ 150   3            delay(100);
+ 151   3            x=1;
+ 152   3            return '6';
+ 153   3          }
+ 154   2          //}
+ 155   2          
+ 156   2          r1=1; r2=1; r3=0; r4=1;   // For row 3
+ 157   2          //if(r3 == 0){
+ 158   2            if(c1==0){
+ 159   3            lcddat('7');
+ 160   3            delay(100);
+ 161   3            x=1;
+ 162   3            return '7';
+ 163   3          }
+ 164   2          if(c1==0){
+ 165   3            lcddat('8');
+ 166   3            delay(100);
+ 167   3            x=1;
+ 168   3            return '8';
+ 169   3          }
+ 170   2          if(c1==0){
+ 171   3            lcddat('9');
+ 172   3            delay(100);
+ 173   3            x=1;
+ 174   3            return '9';
+ 175   3          }
+ 176   2          //}
+ 177   2          
+ 178   2          r1=1; r2=1; r3=1; r4=0;   // For row 4
+C51 COMPILER V9.60.0.0   DOORLOCK                                                          07/04/2021 23:34:32 PAGE 4   
+
+ 179   2          //if(r4==0){
+ 180   2            if(c1==0){
+ 181   3            lcddat('*');
+ 182   3            delay(100);
+ 183   3            x=1;
+ 184   3            return '*';
+ 185   3          }
+ 186   2          
+ 187   2          if(c2==0){
+ 188   3            lcddat('0');
+ 189   3            delay(100);
+ 190   3            x=1;
+ 191   3            return '0';
+ 192   3          }
+ 193   2          
+ 194   2          if(c3==0){
+ 195   3            lcddat('#');
+ 196   3            delay(100);
+ 197   3            x=1;
+ 198   3            return '#';
+ 199   3          }
+ 200   2          //}
+ 201   2          
+ 202   2        }
+ 203   1      }
+ 204          
+ 205          void check(){   //To check for password
+ 206   1        if(pin[0] == epin[0] && pin[1] == epin[1] && pin[2] == epin[2] && pin[3] == epin[3] && pin[4] == epin[4])
+             -{
+ 207   2          delay(1000);
+ 208   2          lcdcmd(0x01);   // Command to clear screen
+ 209   2          lcdcmd(0x81);   // Command to print on first line
+ 210   2          
+ 211   2        if(!unlocked){
+ 212   3          lcddisplay("DOOR UNLOCKED!");
+ 213   3          delay(1000);  
+ 214   3          
+ 215   3          motp1=1;    // Controlling the 
+ 216   3          motp2=0;    //  motors
+ 217   3        
+ 218   3          lcdcmd(0xc1);   // Command to print on second line
+ 219   3          lcddisplay("WELCOME!");
+ 220   3          delay(100000);
+ 221   3          motp1=1;
+ 222   3          motp2=0;
+ 223   3          lcdcmd(0x01);   // Command to clear screen
+ 224   3        
+ 225   3          unlocked=1;
+ 226   3        }
+ 227   2        else{
+ 228   3          motp1=1;    // Controlling the 
+ 229   3          motp2=1;    //  motors
+ 230   3        
+ 231   3          lcdcmd(0x81);   // Command to print on first line
+ 232   3          lcddisplay("DOOR LOCKED!");
+ 233   3          delay(100000);
+ 234   3          motp1=1;
+ 235   3          motp2=1;
+ 236   3          lcdcmd(0x01);   // Command to clear screen
+ 237   3          
+ 238   3          unlocked=0;
+ 239   3        }
+C51 COMPILER V9.60.0.0   DOORLOCK                                                          07/04/2021 23:34:32 PAGE 5   
+
+ 240   2          reset();
+ 241   2        }
+ 242   1        else{
+ 243   2          lcdcmd(0x01);   // Command to clear screen
+ 244   2          lcdcmd(0x80);
+ 245   2          lcddisplay("INCORRECT PIN!");
+ 246   2          delay(1000000);
+ 247   2          lcdcmd(0x01);   // Command to clear screen
+ 248   2        }
+ 249   1      }
+*** WARNING C291 IN LINE 203 OF D:\8051 codes\doorlock.c: not every exit path returns a value
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    611    ----
+   CONSTANT SIZE    =     63    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     13       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
